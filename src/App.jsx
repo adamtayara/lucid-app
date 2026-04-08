@@ -1334,7 +1334,7 @@ function PrivacySection() {
   )
 }
 
-function Footer() { return <footer className="footer"><p>© 2026 NightMind. AI-powered dream interpretation. Your dreams are private.</p></footer> }
+function Footer() { return <footer className="footer"><p>© 2026 NightMind. AI-powered dream interpretation. Patent Pending. Your dreams are private.</p></footer> }
 
 // ================================================================
 // MAIN APP
