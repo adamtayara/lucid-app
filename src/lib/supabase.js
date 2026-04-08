@@ -83,6 +83,105 @@ export async function toggleFavorite(dreamId, isFavorite) {
   if (error) throw error
 }
 
+// Dream Chat (follow-up questions)
+export async function sendDreamChat(dreamId, message, dreamText, previousMessages) {
+  const session = await getSession()
+  if (!session) throw new Error('Not authenticated')
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/dream-chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': supabaseAnonKey,
+    },
+    body: JSON.stringify({ dreamId, message, dreamText, previousMessages }),
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw data
+  return data
+}
+
+export async function getDreamChatHistory(dreamId) {
+  const { data, error } = await supabase
+    .from('dream_chats')
+    .select('*')
+    .eq('dream_id', dreamId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+// Community / Social
+export async function getSharedDreams() {
+  const { data, error } = await supabase
+    .from('shared_dreams')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(30)
+  if (error) throw error
+  return data
+}
+
+export async function shareDream(dreamId, dreamExcerpt, interpretationExcerpt, symbols, emotions, displayName) {
+  const session = await getSession()
+  if (!session) throw new Error('Not authenticated')
+  const { data, error } = await supabase
+    .from('shared_dreams')
+    .insert({
+      dream_id: dreamId,
+      user_id: session.user.id,
+      display_name: displayName || 'Anonymous Dreamer',
+      dream_excerpt: dreamExcerpt,
+      interpretation_excerpt: interpretationExcerpt,
+      symbols, emotions,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function likeDream(sharedDreamId) {
+  const session = await getSession()
+  if (!session) throw new Error('Not authenticated')
+  const { error } = await supabase
+    .from('dream_likes')
+    .insert({ shared_dream_id: sharedDreamId, user_id: session.user.id })
+  if (error && error.code !== '23505') throw error // ignore duplicate
+  // Increment count
+  await supabase.rpc('increment_likes', { dream_id: sharedDreamId }).catch(() => {})
+}
+
+// Lucid dreaming progress
+export async function getLucidProgress() {
+  const session = await getSession()
+  if (!session) return null
+  const { data } = await supabase
+    .from('lucid_progress')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .single()
+  return data
+}
+
+export async function updateLucidProgress(updates) {
+  const session = await getSession()
+  if (!session) throw new Error('Not authenticated')
+  const { data: existing } = await supabase
+    .from('lucid_progress')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .single()
+
+  if (existing) {
+    await supabase.from('lucid_progress').update({ ...updates, updated_at: new Date().toISOString() }).eq('user_id', session.user.id)
+  } else {
+    await supabase.from('lucid_progress').insert({ user_id: session.user.id, ...updates })
+  }
+}
+
 // Stripe checkout
 export async function createCheckout(priceId) {
   const session = await getSession()

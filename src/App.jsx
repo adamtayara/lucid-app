@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { supabase, signUp, signIn, signOut, getProfile, interpretDream as apiInterpretDream, getDreamJournal, toggleFavorite, createCheckout } from './lib/supabase'
+import { supabase, signUp, signIn, signOut, getProfile, interpretDream as apiInterpretDream, getDreamJournal, toggleFavorite, createCheckout, sendDreamChat, getDreamChatHistory, getSharedDreams, shareDream, likeDream, getLucidProgress, updateLucidProgress } from './lib/supabase'
 import './App.css'
 
 // ---- CONSTANTS ----
@@ -294,6 +294,8 @@ function Nav({ onNavigate, user, onAuthClick, onSignOut }) {
       <a className="nav-logo" onClick={() => onNavigate('home')} style={{ cursor: 'pointer' }}>Lucid</a>
       <ul className="nav-links">
         <li><a className="hide-mobile" onClick={() => onNavigate('home')}>Features</a></li>
+        <li><a className="hide-mobile" onClick={() => onNavigate('community')}>Community</a></li>
+        <li><a className="hide-mobile" onClick={() => onNavigate('lucid')}>Lucid Training</a></li>
         <li><a className="hide-mobile" onClick={() => onNavigate('pricing')}>Pricing</a></li>
         {user && <li><a className="hide-mobile" onClick={() => onNavigate('journal')}>Journal</a></li>}
         {user ? (
@@ -984,7 +986,355 @@ function CTASection({ onNavigate }) {
   )
 }
 
-function Footer() { return <footer className="footer"><p>© 2026 Lucid. AI-powered dream interpretation.</p></footer> }
+// ---- DREAM CHAT (follow-up questions) ----
+function DreamChat({ dreamId, dreamText, user, profile, onUpgrade }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const chatEndRef = useRef(null)
+  const isPro = profile?.subscription_tier === 'pro'
+
+  useEffect(() => {
+    if (dreamId && user) loadHistory()
+  }, [dreamId, user])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const loadHistory = async () => {
+    try { const data = await getDreamChatHistory(dreamId); setMessages(data || []) }
+    catch (err) { console.error(err) }
+  }
+
+  const handleSend = async () => {
+    if (!input.trim() || sending) return
+    if (!isPro && messages.filter(m => m.role === 'user').length >= 2) {
+      // Free users get 2 follow-ups per dream
+      return
+    }
+    const userMsg = input.trim()
+    setInput(''); setSending(true)
+    setMessages(prev => [...prev, { role: 'user', message: userMsg, created_at: new Date().toISOString() }])
+
+    try {
+      const { reply } = await sendDreamChat(dreamId, userMsg, dreamText, messages)
+      setMessages(prev => [...prev, { role: 'assistant', message: reply, created_at: new Date().toISOString() }])
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', message: 'Something went wrong. Try again.', created_at: new Date().toISOString() }])
+    }
+    setSending(false)
+  }
+
+  const freeQuestionsLeft = 2 - messages.filter(m => m.role === 'user').length
+
+  const suggestedQuestions = [
+    "What does the main symbol mean for me personally?",
+    "Why do I keep dreaming about this?",
+    "How can I use this dream for personal growth?",
+    "What would Jung say about this dream?",
+  ]
+
+  return (
+    <div className="dream-chat">
+      <div className="dream-chat-header">
+        <span>💬</span>
+        <div>
+          <strong>Chat With Your Dream</strong>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Ask follow-up questions — dig deeper</p>
+        </div>
+      </div>
+
+      {messages.length === 0 && (
+        <div className="chat-suggestions">
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Try asking:</p>
+          {suggestedQuestions.map((q, i) => (
+            <button key={i} className="chat-suggestion-btn" onClick={() => { setInput(q); }}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="chat-messages">
+        {messages.map((m, i) => (
+          <div key={i} className={`chat-msg ${m.role}`}>
+            <div className="chat-msg-avatar">{m.role === 'user' ? '🌙' : '✦'}</div>
+            <div className="chat-msg-bubble">
+              <p>{m.message}</p>
+            </div>
+          </div>
+        ))}
+        {sending && (
+          <div className="chat-msg assistant">
+            <div className="chat-msg-avatar">✦</div>
+            <div className="chat-msg-bubble"><p className="loading-text" style={{ margin: 0 }}>Reflecting...</p></div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {!isPro && freeQuestionsLeft <= 0 ? (
+        <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(139,92,246,0.08)', borderRadius: '12px', marginTop: '0.75rem' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--accent-light)', marginBottom: '0.5rem' }}>Upgrade to Pro for unlimited dream conversations</p>
+          <button className="btn btn-primary" style={{ fontSize: '0.8rem' }} onClick={onUpgrade}>Unlock Pro →</button>
+        </div>
+      ) : (
+        <div className="chat-input-row">
+          <input type="text" className="chat-input" placeholder="Ask about your dream..."
+            value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()} disabled={sending} />
+          <button className="btn btn-primary chat-send" onClick={handleSend} disabled={sending || !input.trim()}>→</button>
+        </div>
+      )}
+      {!isPro && freeQuestionsLeft > 0 && (
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.5rem' }}>
+          {freeQuestionsLeft} free question{freeQuestionsLeft !== 1 ? 's' : ''} left • Pro = unlimited
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ---- COMMUNITY DREAM FEED ----
+function CommunityFeed({ user, onAuthClick }) {
+  const [dreams, setDreams] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { loadFeed() }, [])
+
+  const loadFeed = async () => {
+    try { const data = await getSharedDreams(); setDreams(data || []) }
+    catch (err) { console.error(err) }
+    setLoading(false)
+  }
+
+  const handleLike = async (id) => {
+    if (!user) { onAuthClick(); return }
+    try {
+      await likeDream(id)
+      setDreams(prev => prev.map(d => d.id === id ? { ...d, likes_count: (d.likes_count || 0) + 1 } : d))
+    } catch (err) { console.error(err) }
+  }
+
+  // Sample dreams for when feed is empty
+  const sampleDreams = [
+    { id: 'sample1', display_name: 'Luna M.', dream_excerpt: 'I was swimming in an ocean made of stars. Each star I touched turned into a memory from my childhood...', interpretation_excerpt: 'Themes of nostalgia and emotional vastness. Your subconscious is processing foundational memories.', symbols: ['🌊 Ocean', '⭐ Stars', '👶 Childhood'], emotions: ['Wonder', 'Peace'], likes_count: 42, created_at: new Date().toISOString() },
+    { id: 'sample2', display_name: 'Anonymous Dreamer', dream_excerpt: 'A giant clock was melting in my living room while my cat tried to catch the dripping numbers...', interpretation_excerpt: 'A surreal exploration of time anxiety. The familiar setting grounds an abstract fear.', symbols: ['⏰ Clock', '🐈 Cat', '🏠 Home'], emotions: ['Confusion', 'Curiosity'], likes_count: 28, created_at: new Date().toISOString() },
+    { id: 'sample3', display_name: 'DreamWalker', dream_excerpt: 'I could fly but only as high as the treetops. Every time I went higher, gravity pulled me back gently...', interpretation_excerpt: 'A nuanced take on ambition vs. grounding. You seek transcendence but value stability.', symbols: ['🕊️ Flying', '🌳 Trees', '⬇️ Gravity'], emotions: ['Freedom', 'Acceptance'], likes_count: 67, created_at: new Date().toISOString() },
+  ]
+
+  const displayDreams = dreams.length > 0 ? dreams : sampleDreams
+
+  return (
+    <div className="journal-container" style={{ maxWidth: '700px' }}>
+      <div className="text-center">
+        <div className="section-label">Community</div>
+        <h2 className="section-title">Dream Feed</h2>
+        <p className="section-desc mx-auto">Explore dreams from the community. What are people dreaming about?</p>
+      </div>
+
+      <div style={{ marginTop: '1rem', textAlign: 'center', padding: '0.75rem', background: 'rgba(139,92,246,0.05)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>🔒 All dreams are shared anonymously. Your privacy is always protected.</p>
+      </div>
+
+      {loading ? (
+        <div className="loading-container" style={{ marginTop: '2rem' }}><div className="loading-orbs"><div className="loading-orb" /><div className="loading-orb" /><div className="loading-orb" /></div></div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+          {displayDreams.map(d => (
+            <div key={d.id} className="feature-card" style={{ cursor: 'default' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--accent-light)', fontWeight: 600 }}>{d.display_name}</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+                "{d.dream_excerpt}"
+              </p>
+              {d.interpretation_excerpt && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                  ✦ {d.interpretation_excerpt}
+                </p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="symbols-grid">
+                  {(d.emotions || []).slice(0, 2).map((e, i) => <span key={i} className="symbol-tag">{e}</span>)}
+                </div>
+                <button onClick={() => handleLike(d.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  💜 {d.likes_count || 0}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- LUCID DREAMING TRAINING ----
+function LucidTraining({ user, onAuthClick }) {
+  const [progress, setProgress] = useState(null)
+  const [activeTechnique, setActiveTechnique] = useState(null)
+
+  useEffect(() => {
+    if (user) loadProgress()
+  }, [user])
+
+  const loadProgress = async () => {
+    const p = await getLucidProgress()
+    setProgress(p)
+  }
+
+  const doRealityCheck = async () => {
+    if (!user) { onAuthClick(); return }
+    const newCount = (progress?.reality_checks_today || 0) + 1
+    await updateLucidProgress({ reality_checks_today: newCount, last_reality_check: new Date().toISOString() })
+    setProgress(prev => ({ ...prev, reality_checks_today: newCount }))
+  }
+
+  const techniques = [
+    {
+      id: 'mild', name: 'MILD', fullName: 'Mnemonic Induction of Lucid Dreams', difficulty: 'Beginner',
+      steps: [
+        'As you fall asleep, repeat: "Tonight I will realize I\'m dreaming"',
+        'Visualize yourself in a recent dream, but this time recognizing it\'s a dream',
+        'Focus on the intention to remember you\'re dreaming',
+        'If you wake during the night, repeat the process before falling back asleep',
+      ],
+      tip: 'This works best when combined with a dream journal. The more dreams you record, the better MILD works.',
+    },
+    {
+      id: 'wbtb', name: 'WBTB', fullName: 'Wake Back To Bed', difficulty: 'Intermediate',
+      steps: [
+        'Set an alarm for 5-6 hours after you fall asleep',
+        'When you wake, stay up for 20-30 minutes. Read about lucid dreaming.',
+        'Go back to sleep with the strong intention to recognize you\'re dreaming',
+        'You\'ll enter REM sleep quickly — this is when lucid dreams happen',
+      ],
+      tip: 'This is the most scientifically validated technique. Combine with MILD for best results.',
+    },
+    {
+      id: 'reality', name: 'Reality Checks', fullName: 'Reality Testing', difficulty: 'Beginner',
+      steps: [
+        'Throughout the day, pause and ask: "Am I dreaming right now?"',
+        'Look at your hands — in dreams, they often look distorted',
+        'Try pushing your finger through your palm — in dreams, it might pass through',
+        'Check the time twice — in dreams, clocks often change between looks',
+        'Do this 10-15 times daily. The habit will carry into dreams.',
+      ],
+      tip: 'The key is genuine questioning, not just going through the motions. Really consider the possibility each time.',
+    },
+    {
+      id: 'wild', name: 'WILD', fullName: 'Wake Initiated Lucid Dream', difficulty: 'Advanced',
+      steps: [
+        'Lie still as you fall asleep. Keep your mind awake while your body drifts off.',
+        'You may feel vibrations, hear sounds, or see patterns — this is normal (hypnagogia)',
+        'Don\'t react or move. Let the dream form around you.',
+        'You\'ll transition directly from waking into a lucid dream',
+      ],
+      tip: 'This is the hardest technique but the most rewarding. Best attempted during WBTB wake periods, not at initial bedtime.',
+    },
+  ]
+
+  return (
+    <div className="journal-container" style={{ maxWidth: '750px' }}>
+      <div className="text-center">
+        <div className="section-label">Lucid Dreaming</div>
+        <h2 className="section-title">Learn to Control Your Dreams</h2>
+        <p className="section-desc mx-auto">Master proven techniques to become aware inside your dreams.</p>
+      </div>
+
+      {/* Reality Check Button */}
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <button className="btn btn-primary btn-large" onClick={doRealityCheck} style={{ fontSize: '1.1rem' }}>
+          👋 Reality Check Now
+        </button>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
+          Today: {progress?.reality_checks_today || 0} checks • Goal: 10-15/day
+        </p>
+        <div className="mood-bar" style={{ maxWidth: '300px', margin: '0.5rem auto 0' }}>
+          <div className="mood-fill" style={{ width: `${Math.min(100, ((progress?.reality_checks_today || 0) / 15) * 100)}%` }} />
+        </div>
+      </div>
+
+      {/* Techniques Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '2.5rem' }}>
+        {techniques.map(t => (
+          <div key={t.id} className="feature-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTechnique(activeTechnique === t.id ? null : t.id)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem' }}>{t.name}</h3>
+              <span className="symbol-tag" style={{ fontSize: '0.7rem' }}>{t.difficulty}</span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>{t.fullName}</p>
+
+            {activeTechnique === t.id && (
+              <div style={{ marginTop: '1rem', animation: 'slideIn 0.3s ease' }}>
+                <ol style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {t.steps.map((s, i) => (
+                    <li key={i} style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{s}</li>
+                  ))}
+                </ol>
+                <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(139,92,246,0.08)', borderRadius: '8px' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--accent-light)' }}>💡 {t.tip}</p>
+                </div>
+              </div>
+            )}
+
+            {activeTechnique !== t.id && (
+              <p style={{ fontSize: '0.8rem', color: 'var(--accent-light)', marginTop: '0.25rem' }}>Tap to learn →</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Stats */}
+      {progress && (
+        <div className="journal-stats" style={{ marginTop: '2.5rem' }}>
+          <div className="journal-stat-card"><div className="journal-stat-value">{progress.lucid_dream_count || 0}</div><div className="journal-stat-label">Lucid Dreams</div></div>
+          <div className="journal-stat-card"><div className="journal-stat-value">{progress.reality_checks_today || 0}</div><div className="journal-stat-label">Checks Today</div></div>
+          <div className="journal-stat-card"><div className="journal-stat-value">{progress.streak_days || 0}🔥</div><div className="journal-stat-label">Streak</div></div>
+          <div className="journal-stat-card"><div className="journal-stat-value">{(progress.techniques_completed || []).length}</div><div className="journal-stat-label">Techniques</div></div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- PRIVACY SECTION (for landing page) ----
+function PrivacySection() {
+  return (
+    <section>
+      <div className="text-center">
+        <div className="section-label">Your Privacy</div>
+        <h2 className="section-title">Your Dreams Are Sacred</h2>
+        <p className="section-desc mx-auto">We take dream privacy seriously. Your most intimate thoughts deserve protection.</p>
+      </div>
+      <div className="features-grid" style={{ marginTop: '2rem' }}>
+        <div className="feature-card">
+          <div className="feature-icon">🔒</div>
+          <h3>End-to-End Private</h3>
+          <p>Your dreams are encrypted and only visible to you. We never sell, share, or use your dream data for training.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">🫥</div>
+          <h3>Anonymous Sharing</h3>
+          <p>When you share dreams to the community feed, your identity is always hidden. Share only what you're comfortable with.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">🗑️</div>
+          <h3>Delete Anytime</h3>
+          <p>Your data, your rules. Delete any dream or your entire account at any time. We wipe everything permanently.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Footer() { return <footer className="footer"><p>© 2026 Lucid. AI-powered dream interpretation. Your dreams are private.</p></footer> }
 
 // ================================================================
 // MAIN APP
@@ -1043,7 +1393,7 @@ function App() {
       <div className="app-container">
         <Nav onNavigate={navigate} user={user} onAuthClick={() => setShowAuth(true)} onSignOut={handleSignOut} />
 
-        {view === 'home' && (<><Hero onNavigate={navigate} /><HowItWorks /><Features /><Testimonials /><Pricing onNavigate={navigate} user={user} profile={profile} onAuthClick={() => setShowAuth(true)} /><CTASection onNavigate={navigate} /></>)}
+        {view === 'home' && (<><Hero onNavigate={navigate} /><HowItWorks /><Features /><Testimonials /><PrivacySection /><Pricing onNavigate={navigate} user={user} profile={profile} onAuthClick={() => setShowAuth(true)} /><CTASection onNavigate={navigate} /></>)}
 
         {view === 'interpret' && (
           <div style={{ paddingTop: '5rem' }}>
@@ -1054,12 +1404,29 @@ function App() {
         {view === 'result' && result && (
           <div style={{ paddingTop: '5rem' }}>
             <ResultCard result={result} onShare={() => setShowShare(true)} onNew={() => { setResult(null); navigate('interpret') }} profile={profile} onUpgrade={handleUpgrade} />
+            {user && result.id && (
+              <div className="interpret-section" style={{ paddingTop: 0 }}>
+                <DreamChat dreamId={result.id} dreamText={result.summary} user={user} profile={profile} onUpgrade={handleUpgrade} />
+              </div>
+            )}
           </div>
         )}
 
         {view === 'journal' && (
           <div style={{ paddingTop: '5rem' }}>
             <CalendarJournal onNavigate={navigate} profile={profile} onUpgrade={handleUpgrade} />
+          </div>
+        )}
+
+        {view === 'community' && (
+          <div style={{ paddingTop: '5rem' }}>
+            <CommunityFeed user={user} onAuthClick={() => setShowAuth(true)} />
+          </div>
+        )}
+
+        {view === 'lucid' && (
+          <div style={{ paddingTop: '5rem' }}>
+            <LucidTraining user={user} onAuthClick={() => setShowAuth(true)} />
           </div>
         )}
 
