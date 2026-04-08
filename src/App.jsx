@@ -76,7 +76,10 @@ function AuthModal({ onClose, onAuth, mode: initialMode = 'signin' }) {
       if (mode === 'signup') {
         const { data, error: authError } = await signUp(email, password)
         if (authError) throw authError
-        setSuccess('Check your email to confirm your account, then sign in!')
+        // Auto sign in immediately after signup
+        const { data: signInData, error: signInError } = await signIn(email, password)
+        if (signInError) throw signInError
+        onAuth(signInData); onClose()
       } else {
         const { data, error: authError } = await signIn(email, password)
         if (authError) throw authError
@@ -138,8 +141,10 @@ function EmailGate({ dreamText, onAuth, onClose }) {
       if (mode === 'signup') {
         const { data, error: authError } = await signUp(email, password)
         if (authError) throw authError
-        setSuccess('Check your email to confirm, then sign in below!')
-        setMode('signin')
+        // Auto sign in immediately after signup
+        const { data: signInData, error: signInError } = await signIn(email, password)
+        if (signInError) throw signInError
+        onAuth(signInData)
       } else {
         const { data, error: authError } = await signIn(email, password)
         if (authError) throw authError
