@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase, signUp, signIn, signOut, getProfile, interpretDream as apiInterpretDream, getDreamJournal, toggleFavorite, createCheckout } from './lib/supabase'
 import './App.css'
 
@@ -181,33 +181,91 @@ function EmailGate({ dreamText, onAuth, onClose }) {
 
 // ---- PUSH NOTIFICATION BANNER ----
 function PushBanner({ onDismiss }) {
+  const [notifTime, setNotifTime] = useState('07:00')
+  const [enabled, setEnabled] = useState(false)
+
   const handleEnable = async () => {
     try {
       const permission = await Notification.requestPermission()
       if (permission === 'granted') {
-        // Register for notifications
-        if ('serviceWorker' in navigator) {
-          const reg = await navigator.serviceWorker.ready
-          // In production, subscribe to push service here
-        }
+        setEnabled(true)
+        scheduleMorningNotification(notifTime)
+        // Show confirmation briefly, then dismiss
+        setTimeout(onDismiss, 2000)
+      } else {
+        onDismiss()
       }
-    } catch (err) { console.error(err) }
-    onDismiss()
+    } catch (err) { console.error(err); onDismiss() }
   }
 
   return (
     <div className="push-banner">
       <div className="push-banner-icon">🌙</div>
       <div className="push-banner-text">
-        <strong>Never forget a dream</strong>
-        <p>Get a gentle morning reminder to log your dream before it fades</p>
+        {enabled ? (
+          <>
+            <strong style={{ color: '#34d399' }}>Morning reminders enabled!</strong>
+            <p>We'll nudge you at {notifTime.replace(/^0/, '')} every morning</p>
+          </>
+        ) : (
+          <>
+            <strong>Never forget a dream</strong>
+            <p>Get a morning reminder to log your dream before it fades</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <label style={{ fontSize: '0.75rem', color: '#9b8fb8' }}>Wake time:</label>
+              <input type="time" value={notifTime} onChange={e => setNotifTime(e.target.value)}
+                style={{
+                  background: 'rgba(10,5,21,0.6)', border: '1px solid rgba(139,92,246,0.15)',
+                  borderRadius: '6px', color: '#f0edf6', padding: '0.25rem 0.5rem',
+                  fontSize: '0.8rem', fontFamily: 'inherit',
+                }} />
+            </div>
+          </>
+        )}
       </div>
-      <div className="push-banner-actions">
-        <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={handleEnable}>Enable</button>
-        <button className="push-banner-close" onClick={onDismiss}>✕</button>
-      </div>
+      {!enabled && (
+        <div className="push-banner-actions">
+          <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={handleEnable}>Enable</button>
+          <button className="push-banner-close" onClick={onDismiss}>✕</button>
+        </div>
+      )}
     </div>
   )
+}
+
+// Schedule morning notification using the Notification API + setTimeout
+function scheduleMorningNotification(timeStr) {
+  const scheduleNext = () => {
+    const now = new Date()
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const target = new Date()
+    target.setHours(hours, minutes, 0, 0)
+    // If target time already passed today, schedule for tomorrow
+    if (target <= now) target.setDate(target.getDate() + 1)
+    const delay = target - now
+
+    setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        const messages = [
+          "What did you dream last night? Record it before it fades...",
+          "Your subconscious left you a message. Let's decode it.",
+          "Dreams are freshest in the first 5 minutes. Quick, write it down!",
+          "Good morning! Your dream journal is waiting.",
+          "The best insights come from dreams you almost forgot. Capture yours now.",
+        ]
+        const msg = messages[Math.floor(Math.random() * messages.length)]
+        new Notification('🌙 Lucid — Dream Reminder', {
+          body: msg,
+          icon: '/icon-192.png',
+          tag: 'morning-dream-reminder',
+          requireInteraction: true,
+        })
+      }
+      // Reschedule for next day
+      scheduleNext()
+    }, delay)
+  }
+  scheduleNext()
 }
 
 // ---- STREAK BANNER ----
@@ -326,6 +384,94 @@ function Testimonials() {
 }
 
 // ---- DREAM INTERPRETER (with email gate) ----
+// ---- VOICE RECORDING HOOK ----
+function useVoiceInput() {
+  const [isListening, setIsListening] = useState(false)
+  const [transcript, setTranscript] = useState('')
+  const [supported, setSupported] = useState(false)
+  const recognitionRef = useRef(null)
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      setSupported(true)
+      const recognition = new SpeechRecognition()
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+
+      recognition.onresult = (event) => {
+        let finalTranscript = ''
+        let interimTranscript = ''
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' '
+          } else {
+            interimTranscript += event.results[i][0].transcript
+          }
+        }
+        setTranscript(finalTranscript + interimTranscript)
+      }
+
+      recognition.onerror = (event) => {
+        console.error('Speech error:', event.error)
+        setIsListening(false)
+      }
+
+      recognition.onend = () => {
+        setIsListening(false)
+      }
+
+      recognitionRef.current = recognition
+    }
+  }, [])
+
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      setTranscript('')
+      recognitionRef.current.start()
+      setIsListening(true)
+    }
+  }
+
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    }
+  }
+
+  return { isListening, transcript, supported, startListening, stopListening }
+}
+
+// ---- VOICE RECORDER UI ----
+function VoiceRecorder({ onTranscript, isListening, onStart, onStop, duration }) {
+  return (
+    <div className="voice-recorder">
+      <div className={`voice-orb ${isListening ? 'active' : ''}`} onClick={isListening ? onStop : onStart}>
+        <div className="voice-orb-inner">
+          {isListening ? (
+            <div className="voice-waves">
+              <div className="voice-wave" /><div className="voice-wave" /><div className="voice-wave" />
+              <div className="voice-wave" /><div className="voice-wave" />
+            </div>
+          ) : (
+            <span className="voice-mic">🎙️</span>
+          )}
+        </div>
+      </div>
+      <p className="voice-label">
+        {isListening ? `Listening... ${duration}s` : 'Tap to speak your dream'}
+      </p>
+      {isListening && (
+        <button className="btn btn-secondary" onClick={onStop} style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
+          ✓ Done Speaking
+        </button>
+      )}
+    </div>
+  )
+}
+
 function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
   const [dreamText, setDreamText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -333,19 +479,55 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
   const [error, setError] = useState('')
   const [showEmailGate, setShowEmailGate] = useState(false)
   const [pendingDream, setPendingDream] = useState('')
+  const [inputMode, setInputMode] = useState('text') // 'text' or 'voice'
+  const [voiceDuration, setVoiceDuration] = useState(0)
+  const voiceTimerRef = useRef(null)
+
+  const { isListening, transcript, supported, startListening, stopListening } = useVoiceInput()
+
+  // Sync voice transcript to dreamText
+  useEffect(() => {
+    if (transcript) setDreamText(prev => {
+      // If we just started voice, replace. Otherwise append.
+      if (inputMode === 'voice') return transcript
+      return prev
+    })
+  }, [transcript, inputMode])
+
+  // Voice duration timer
+  useEffect(() => {
+    if (isListening) {
+      setVoiceDuration(0)
+      voiceTimerRef.current = setInterval(() => setVoiceDuration(d => d + 1), 1000)
+    } else {
+      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current)
+      // If we were recording and stopped, switch back to text to show the result
+      if (inputMode === 'voice' && dreamText.length > 0) {
+        setInputMode('text')
+      }
+    }
+    return () => { if (voiceTimerRef.current) clearInterval(voiceTimerRef.current) }
+  }, [isListening])
+
+  const handleVoiceStart = () => {
+    setInputMode('voice')
+    startListening()
+  }
+
+  const handleVoiceStop = () => {
+    stopListening()
+  }
 
   const handleSubmit = async () => {
     if (dreamText.trim().length < 20) return
     setError('')
 
     if (!user) {
-      // Not logged in → show email gate
       setPendingDream(dreamText)
       setShowEmailGate(true)
       return
     }
 
-    // Logged in → interpret
     await doInterpret(dreamText)
   }
 
@@ -366,7 +548,6 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
       if (err.error === 'limit_reached') {
         setError(err.message)
       } else {
-        // Fallback to local
         const result = localInterpretation(text)
         onResult(result)
       }
@@ -375,7 +556,6 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
 
   const handleEmailGateAuth = (data) => {
     onEmailGateAuth(data)
-    // After auth, immediately interpret the pending dream
     setTimeout(() => doInterpret(pendingDream), 500)
   }
 
@@ -384,7 +564,7 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
       <div className="text-center">
         <div className="section-label">Dream Interpreter</div>
         <h2 className="section-title">What Did You Dream?</h2>
-        <p className="section-desc mx-auto">Describe your dream in as much detail as you can remember.</p>
+        <p className="section-desc mx-auto">Describe your dream in as much detail as you can remember — type it or speak it.</p>
       </div>
       <div className="dream-input-card">
         {showEmailGate ? (
@@ -396,13 +576,50 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
           </div>
         ) : (
           <>
-            <textarea className="dream-textarea"
-              placeholder="I was walking through a forest at night when I noticed the trees were made of glass. A wolf appeared on the path ahead, but instead of being afraid, I felt calm..."
-              value={dreamText} onChange={e => setDreamText(e.target.value)} maxLength={2000} />
-            <div className="dream-submit-row">
-              <span className="char-count">{dreamText.length}/2000</span>
-              <button className="btn btn-primary" onClick={handleSubmit} disabled={dreamText.trim().length < 20}>✦ Interpret My Dream</button>
-            </div>
+            {/* Mode toggle */}
+            {supported && (
+              <div className="input-mode-toggle">
+                <button className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`} onClick={() => { setInputMode('text'); if (isListening) stopListening() }}>
+                  ✏️ Type
+                </button>
+                <button className={`mode-btn ${inputMode === 'voice' || isListening ? 'active' : ''}`} onClick={() => { if (!isListening) { setInputMode('voice'); handleVoiceStart() } }}>
+                  🎙️ Speak
+                </button>
+              </div>
+            )}
+
+            {/* Voice mode */}
+            {(inputMode === 'voice' && isListening) ? (
+              <VoiceRecorder
+                onTranscript={setDreamText}
+                isListening={isListening}
+                onStart={handleVoiceStart}
+                onStop={handleVoiceStop}
+                duration={voiceDuration}
+              />
+            ) : null}
+
+            {/* Text area (shown in text mode, or after voice recording finishes) */}
+            {(inputMode === 'text' || !isListening) && (
+              <>
+                <div style={{ position: 'relative' }}>
+                  <textarea className="dream-textarea"
+                    placeholder="I was walking through a forest at night when I noticed the trees were made of glass. A wolf appeared on the path ahead, but instead of being afraid, I felt calm..."
+                    value={dreamText} onChange={e => setDreamText(e.target.value)} maxLength={2000} />
+                  {/* Inline mic button */}
+                  {supported && !isListening && (
+                    <button className="inline-mic-btn" onClick={handleVoiceStart} title="Speak your dream">
+                      🎙️
+                    </button>
+                  )}
+                </div>
+                <div className="dream-submit-row">
+                  <span className="char-count">{dreamText.length}/2000</span>
+                  <button className="btn btn-primary" onClick={handleSubmit} disabled={dreamText.trim().length < 20}>✦ Interpret My Dream</button>
+                </div>
+              </>
+            )}
+
             {error && (
               <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '12px' }}>
                 <p style={{ color: '#f87171', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{error}</p>
