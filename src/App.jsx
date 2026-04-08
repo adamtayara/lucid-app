@@ -91,7 +91,7 @@ function AuthModal({ onClose, onAuth, mode: initialMode = 'signin' }) {
       <div className="share-card" style={{ maxWidth: '400px', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
         <button className="share-close" onClick={onClose}>✕</button>
         <div className="share-card-content">
-          <div className="logo" style={{ textAlign: 'center' }}>✦ LUCID</div>
+          <div className="logo" style={{ textAlign: 'center' }}>✦ NIGHTMIND</div>
           <h3 style={{ textAlign: 'center', marginBottom: '0.5rem', fontFamily: "'Playfair Display', serif" }}>
             {mode === 'signin' ? 'Welcome Back' : 'Create Your Account'}
           </h3>
@@ -254,7 +254,7 @@ function scheduleMorningNotification(timeStr) {
           "The best insights come from dreams you almost forgot. Capture yours now.",
         ]
         const msg = messages[Math.floor(Math.random() * messages.length)]
-        new Notification('🌙 Lucid — Dream Reminder', {
+        new Notification('🌙 NightMind — Dream Reminder', {
           body: msg,
           icon: '/icon-192.png',
           tag: 'morning-dream-reminder',
@@ -291,7 +291,7 @@ function StreakBanner({ streak }) {
 function Nav({ onNavigate, user, onAuthClick, onSignOut }) {
   return (
     <nav className="nav">
-      <a className="nav-logo" onClick={() => onNavigate('home')} style={{ cursor: 'pointer' }}>Lucid</a>
+      <a className="nav-logo" onClick={() => onNavigate('home')} style={{ cursor: 'pointer' }}>NightMind</a>
       <ul className="nav-links">
         <li><a className="hide-mobile" onClick={() => onNavigate('home')}>Features</a></li>
         <li><a className="hide-mobile" onClick={() => onNavigate('community')}>Community</a></li>
@@ -351,7 +351,7 @@ function HowItWorks() {
 function Features() {
   return (
     <section>
-      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">More Than Just Interpretation</h2><p className="section-desc mx-auto">Lucid combines AI with deep psychological frameworks.</p></div>
+      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">More Than Just Interpretation</h2><p className="section-desc mx-auto">NightMind combines AI with deep psychological frameworks.</p></div>
       <div className="features-grid">
         <div className="feature-card"><div className="feature-icon">🧠</div><h3>Deep Psychology</h3><p>Jungian archetypes, Freudian theory, and modern dream science.</p></div>
         <div className="feature-card"><div className="feature-icon">🎨</div><h3>Dream Art</h3><p>AI-generated artwork that visualizes your dream.</p></div>
@@ -366,7 +366,7 @@ function Features() {
 
 function Testimonials() {
   const reviews = [
-    { text: "Lucid showed me connections I never noticed. The Jungian analysis is genuinely insightful.", name: "Maya K.", handle: "@mayakreates", initials: "MK" },
+    { text: "NightMind showed me connections I never noticed. The Jungian analysis is genuinely insightful.", name: "Maya K.", handle: "@mayakreates", initials: "MK" },
     { text: "Made a TikTok about my dream interpretation and it got 200K views. The share cards are beautiful.", name: "Jordan T.", handle: "@jordtee", initials: "JT" },
     { text: "The calendar journal is addicting. Seeing a whole month of dream patterns is mind-blowing.", name: "Alex R.", handle: "@alexrdreams", initials: "AR" },
   ]
@@ -643,7 +643,7 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
     <div className="interpret-section">
       <div className="result-card">
         <div className="result-header">
-          <div className="result-badge">✦ Lucid Analysis</div>
+          <div className="result-badge">✦ NightMind Analysis</div>
           <div className="result-date">{result.date}</div>
         </div>
         <div className="result-body">
@@ -757,13 +757,13 @@ function ShareCard({ result, onClose }) {
       <div className="share-card" onClick={e => e.stopPropagation()}>
         <button className="share-close" onClick={onClose}>✕</button>
         <div className="share-card-content">
-          <div className="logo">✦ LUCID</div>
+          <div className="logo">✦ NIGHTMIND</div>
           <p className="dream-excerpt">"{result.summary}"</p>
           <p className="meaning">{result.overview.slice(0, 200)}...</p>
           <div className="symbols-grid" style={{ justifyContent: 'center', marginBottom: '1.5rem' }}>
             {result.symbols.slice(0, 3).map((s, i) => <span key={i} className="symbol-tag">{s.split('—')[0].trim()}</span>)}
           </div>
-          <p className="cta">getlucid.app — decode your dreams</p>
+          <p className="cta">nightmind.app — decode your dreams</p>
         </div>
       </div>
     </div>
@@ -1175,7 +1175,7 @@ function CommunityFeed({ user, onAuthClick }) {
   )
 }
 
-// ---- LUCID DREAMING TRAINING ----
+// ---- DREAM TRAINING ----
 function LucidTraining({ user, onAuthClick }) {
   const [progress, setProgress] = useState(null)
   const [activeTechnique, setActiveTechnique] = useState(null)
@@ -1243,7 +1243,7 @@ function LucidTraining({ user, onAuthClick }) {
   return (
     <div className="journal-container" style={{ maxWidth: '750px' }}>
       <div className="text-center">
-        <div className="section-label">Lucid Dreaming</div>
+        <div className="section-label">Dream Training</div>
         <h2 className="section-title">Learn to Control Your Dreams</h2>
         <p className="section-desc mx-auto">Master proven techniques to become aware inside your dreams.</p>
       </div>
@@ -1334,7 +1334,7 @@ function PrivacySection() {
   )
 }
 
-function Footer() { return <footer className="footer"><p>© 2026 Lucid. AI-powered dream interpretation. Your dreams are private.</p></footer> }
+function Footer() { return <footer className="footer"><p>© 2026 NightMind. AI-powered dream interpretation. Your dreams are private.</p></footer> }
 
 // ================================================================
 // MAIN APP

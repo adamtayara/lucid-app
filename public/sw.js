@@ -1,6 +1,6 @@
-// Lucid Service Worker — handles push notifications and offline caching
+// NightMind Service Worker — handles push notifications and offline caching
 
-const CACHE_NAME = 'lucid-v1'
+const CACHE_NAME = 'nightmind-v1'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -35,7 +35,7 @@ self.addEventListener('fetch', (event) => {
 // Push notification handler
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {}
-  const title = data.title || '🌙 Lucid — Dream Reminder'
+  const title = data.title || '🌙 NightMind — Dream Reminder'
   const options = {
     body: data.body || 'What did you dream last night? Record it before it fades...',
     icon: '/icon-192.png',
