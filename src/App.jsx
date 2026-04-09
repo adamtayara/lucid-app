@@ -978,11 +978,11 @@ function Pricing({ onNavigate, user, profile, onAuthClick }) {
     if (!user) { onAuthClick(); return }
     setLoading(true)
     try {
-      const { url } = await createCheckout('price_YOUR_STRIPE_PRICE_ID')
+      const { url } = await createCheckout('price_1TK3nDJNbika93x6lB2lbIBx')
       window.location.href = url
     } catch (err) {
       console.error(err)
-      alert('Stripe is not configured yet. Add your STRIPE_SECRET_KEY and Price ID to go live.')
+      alert('Payment error: ' + (err?.error || err?.message || JSON.stringify(err)))
     }
     setLoading(false)
   }
