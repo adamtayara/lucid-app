@@ -1,13 +1,13 @@
 // NightMind Service Worker — handles push notifications and offline caching
 
-const CACHE_NAME = 'nightmind-v1'
+const CACHE_NAME = 'nightmind-v2'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
 ]
 
-// Install: cache core assets
+// Install: cache core assets, activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-// Activate: clean old caches
+// Activate: clean old caches, take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -25,10 +25,22 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch: serve from cache, fallback to network
+// Fetch: network-first strategy — always try fresh content, fall back to cache offline
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and API calls
+  if (event.request.method !== 'GET' || event.request.url.includes('/functions/v1/')) {
+    return
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        // Cache the fresh response for offline use
+        const clone = response.clone()
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+        return response
+      })
+      .catch(() => caches.match(event.request))
   )
 })
 
