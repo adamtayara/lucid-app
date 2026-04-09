@@ -31,6 +31,13 @@ export async function signOut() {
 
 export async function getSession() {
   const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return null
+  // Check if token is expired or about to expire (within 60s)
+  const expiresAt = session.expires_at ? session.expires_at * 1000 : 0
+  if (expiresAt && Date.now() > expiresAt - 60000) {
+    const { data: { session: refreshed } } = await supabase.auth.refreshSession()
+    return refreshed
+  }
   return session
 }
 

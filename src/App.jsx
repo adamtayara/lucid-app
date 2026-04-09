@@ -660,18 +660,51 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
             <p className="interpretation-text">{result.overview}</p>
           </div>
 
+          {/* FREE: Core Theme (if available) */}
+          {result.coreTheme && (
+            <div className="interpretation-section">
+              <div className="interpretation-label">Core Theme</div>
+              <p className="interpretation-text" style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--accent-light)' }}>{result.coreTheme}</p>
+            </div>
+          )}
+
+          {/* FREE: Element Breakdown (always visible — the premium feel) */}
+          {result.elementBreakdown && result.elementBreakdown.length > 0 && (
+            <div className="interpretation-section">
+              <div className="interpretation-label">Dream Elements</div>
+              <div className="element-breakdown">
+                {result.elementBreakdown.map((el, i) => (
+                  <div key={i} className="element-card">
+                    <div className="element-name">{el.element}</div>
+                    <div className="element-role">{el.role}</div>
+                    <div className="element-interp">{el.interpretation}</div>
+                    <div className="element-reason">{el.reasoning}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* FREE: Key Symbols (always visible) */}
           <div className="interpretation-section">
             <div className="interpretation-label">Key Symbols</div>
-            <div className="symbols-grid">{result.symbols.map((s, i) => <span key={i} className="symbol-tag">{s}</span>)}</div>
+            <div className="symbols-grid">{(result.symbols || []).map((s, i) => <span key={i} className="symbol-tag">{s}</span>)}</div>
           </div>
 
           {/* FREE: Emotional Landscape (always visible) */}
           <div className="interpretation-section">
             <div className="interpretation-label">Emotional Landscape</div>
-            <div className="symbols-grid">{result.emotions.map((e, i) => <span key={i} className="symbol-tag">{e}</span>)}</div>
-            <div className="mood-bar"><div className="mood-fill" style={{ width: `${result.moodScore}%` }} /></div>
+            <div className="symbols-grid">{(result.emotions || []).map((e, i) => <span key={i} className="symbol-tag">{e}</span>)}</div>
+            <div className="mood-bar"><div className="mood-fill" style={{ width: `${result.moodScore || 50}%` }} /></div>
           </div>
+
+          {/* FREE: Real-Life Connection (if available) */}
+          {result.realLifeConnection && (
+            <div className="interpretation-section">
+              <div className="interpretation-label">Real-Life Connection</div>
+              <p className="interpretation-text">{result.realLifeConnection}</p>
+            </div>
+          )}
 
           {/* PRO: Psychological Analysis (blurred for free) */}
           {isPro ? (
@@ -683,7 +716,7 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
             <div className="pro-locked">
               <div className="pro-locked-content">
                 <div className="interpretation-label">Psychological Analysis</div>
-                <p className="interpretation-text">{result.psychological || 'From a Jungian perspective, this dream represents a deep dialogue between your conscious and unconscious mind...'}</p>
+                <p className="interpretation-text">{result.psychological || 'A deeper look at what your specific dream elements reveal about your inner state...'}</p>
               </div>
               <div className="pro-locked-overlay">
                 <div className="lock-icon">🔒</div>
@@ -693,21 +726,21 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
             </div>
           )}
 
-          {/* PRO: Deep Freudian Analysis (blurred for free) */}
+          {/* PRO: Deep Analysis (blurred for free) */}
           {isPro ? (
             <div className="interpretation-section">
-              <div className="interpretation-label">Freudian Deep Dive</div>
-              <p className="interpretation-text">{result.deepAnalysis || 'A deeper Freudian analysis of your dream reveals unconscious wish-fulfillment patterns...'}</p>
+              <div className="interpretation-label">Deep Dive</div>
+              <p className="interpretation-text">{result.deepAnalysis}</p>
             </div>
           ) : (
             <div className="pro-locked">
               <div className="pro-locked-content">
-                <div className="interpretation-label">Freudian Deep Dive</div>
-                <p className="interpretation-text">Freud would interpret the sensory details of this dream as wish-fulfillment encoded in symbolic form. The dream-work has transformed latent content into manifest imagery...</p>
+                <div className="interpretation-label">Deep Dive</div>
+                <p className="interpretation-text">{result.deepAnalysis || 'Connecting your specific dream details to deeper patterns and possible real-life triggers...'}</p>
               </div>
               <div className="pro-locked-overlay">
                 <div className="lock-icon">🔒</div>
-                <p>Freudian Analysis — Pro Only</p>
+                <p>Deep Analysis — Pro Only</p>
                 <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '0.5rem 1.25rem' }} onClick={onUpgrade}>Unlock with Pro →</button>
               </div>
             </div>
@@ -717,13 +750,13 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
           {isPro ? (
             <div className="interpretation-section">
               <div className="interpretation-label">Pattern Insight</div>
-              <p className="interpretation-text">{result.patternInsight || 'Based on your recent dreams, we detect a recurring theme of transformation...'}</p>
+              <p className="interpretation-text">{result.patternInsight}</p>
             </div>
           ) : (
             <div className="pro-locked">
               <div className="pro-locked-content">
                 <div className="interpretation-label">Pattern Insight</div>
-                <p className="interpretation-text">Based on your dream imagery, you may be in a period of transition. Recurring symbols will clarify the specific area of life undergoing change...</p>
+                <p className="interpretation-text">{result.patternInsight || 'What to watch for in your next few dreams based on tonight\'s imagery...'}</p>
               </div>
               <div className="pro-locked-overlay">
                 <div className="lock-icon">📊</div>
@@ -738,6 +771,21 @@ function ResultCard({ result, onShare, onNew, profile, onUpgrade }) {
             <div className="interpretation-label">Guidance</div>
             <p className="interpretation-text">{result.advice}</p>
           </div>
+
+          {/* FREE: Follow-Up Questions (if available) */}
+          {result.followUpQuestions && result.followUpQuestions.length > 0 && (
+            <div className="interpretation-section">
+              <div className="interpretation-label">Questions to Explore</div>
+              <div className="followup-questions">
+                {result.followUpQuestions.map((q, i) => (
+                  <div key={i} className="followup-q">
+                    <span className="followup-icon">?</span>
+                    <span>{q}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {result.dreamsRemaining !== undefined && (
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
