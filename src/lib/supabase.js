@@ -191,7 +191,7 @@ export async function updateLucidProgress(updates) {
 
 // Stripe checkout
 export async function createCheckout(priceId) {
-  const session = await getSession()
+  const { data: { session } } = await supabase.auth.refreshSession()
   if (!session) throw new Error('Not authenticated')
 
   const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout`, {
