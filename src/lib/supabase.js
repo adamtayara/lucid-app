@@ -120,47 +120,6 @@ export async function getDreamChatHistory(dreamId) {
   return data
 }
 
-// Community / Social
-export async function getSharedDreams() {
-  const { data, error } = await supabase
-    .from('shared_dreams')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(30)
-  if (error) throw error
-  return data
-}
-
-export async function shareDream(dreamId, dreamExcerpt, interpretationExcerpt, symbols, emotions, displayName) {
-  const session = await getSession()
-  if (!session) throw new Error('Not authenticated')
-  const { data, error } = await supabase
-    .from('shared_dreams')
-    .insert({
-      dream_id: dreamId,
-      user_id: session.user.id,
-      display_name: displayName || 'Anonymous Dreamer',
-      dream_excerpt: dreamExcerpt,
-      interpretation_excerpt: interpretationExcerpt,
-      symbols, emotions,
-    })
-    .select()
-    .single()
-  if (error) throw error
-  return data
-}
-
-export async function likeDream(sharedDreamId) {
-  const session = await getSession()
-  if (!session) throw new Error('Not authenticated')
-  const { error } = await supabase
-    .from('dream_likes')
-    .insert({ shared_dream_id: sharedDreamId, user_id: session.user.id })
-  if (error && error.code !== '23505') throw error // ignore duplicate
-  // Increment count
-  await supabase.rpc('increment_likes', { dream_id: sharedDreamId }).catch(() => {})
-}
-
 // Lucid dreaming progress
 export async function getLucidProgress() {
   const session = await getSession()

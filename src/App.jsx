@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { supabase, signUp, signIn, signOut, getProfile, interpretDream as apiInterpretDream, getDreamJournal, toggleFavorite, createCheckout, sendDreamChat, getDreamChatHistory, getSharedDreams, shareDream, likeDream, getLucidProgress, updateLucidProgress } from './lib/supabase'
+import { supabase, signUp, signIn, signOut, getProfile, interpretDream as apiInterpretDream, getDreamJournal, toggleFavorite, createCheckout, sendDreamChat, getDreamChatHistory, getLucidProgress, updateLucidProgress } from './lib/supabase'
 import './App.css'
 
 // ---- CONSTANTS ----
@@ -298,21 +298,26 @@ function Nav({ onNavigate, user, onAuthClick, onSignOut }) {
     <nav className="nav">
       <a className="nav-logo" onClick={() => onNavigate('home')} style={{ cursor: 'pointer' }}>NightMind</a>
       <ul className="nav-links">
-        <li><a className="hide-mobile" onClick={() => onNavigate('home')}>Features</a></li>
-        <li><a className="hide-mobile" onClick={() => onNavigate('community')}>Community</a></li>
-        <li><a className="hide-mobile" onClick={() => onNavigate('lucid')}>Lucid Training</a></li>
-        <li><a className="hide-mobile" onClick={() => onNavigate('pricing')}>Pricing</a></li>
-        {user && <li><a className="hide-mobile" onClick={() => onNavigate('journal')}>Journal</a></li>}
         {user ? (
-          <li style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <button className="btn btn-primary" onClick={() => onNavigate('interpret')}>Interpret Dream</button>
-            <button className="btn btn-secondary" onClick={onSignOut} style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}>Sign Out</button>
-          </li>
+          <>
+            <li><a className="hide-mobile" onClick={() => onNavigate('home')}>Dashboard</a></li>
+            <li><a className="hide-mobile" onClick={() => onNavigate('journal')}>Journal</a></li>
+            <li><a className="hide-mobile" onClick={() => onNavigate('lucid')}>Training</a></li>
+            <li><a className="hide-mobile" onClick={() => onNavigate('settings')}>Settings</a></li>
+            <li>
+              <button className="btn btn-primary" onClick={() => onNavigate('interpret')}>+ New Dream</button>
+            </li>
+          </>
         ) : (
-          <li style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <button className="btn btn-secondary" onClick={onAuthClick}>Sign In</button>
-            <button className="btn btn-primary" onClick={() => onNavigate('interpret')}>Try Free</button>
-          </li>
+          <>
+            <li><a className="hide-mobile" onClick={() => onNavigate('home')}>How It Works</a></li>
+            <li><a className="hide-mobile" onClick={() => onNavigate('home')}>Examples</a></li>
+            <li><a className="hide-mobile" onClick={() => onNavigate('pricing')}>Pricing</a></li>
+            <li style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <button className="btn btn-secondary" onClick={onAuthClick}>Sign In</button>
+              <button className="btn btn-primary" onClick={() => onNavigate('interpret')}>Start Your Interpretation</button>
+            </li>
+          </>
         )}
       </ul>
     </nav>
@@ -328,8 +333,7 @@ function Hero({ onNavigate }) {
       <h1>Decode Your<br /><span className="gradient-text">Dreams</span></h1>
       <p className="hero-sub">Uncover the hidden messages in your dreams with deep psychological analysis powered by AI. Jungian. Freudian. Personal.</p>
       <div className="hero-cta">
-        <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Interpret My Dream →</button>
-        <button className="btn btn-secondary btn-large" onClick={() => onNavigate('pricing')}>See Pricing</button>
+        <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Start Your Interpretation →</button>
       </div>
       <div className="hero-stats">
         <div className="hero-stat"><div className="hero-stat-num">50K+</div><div className="hero-stat-label">Dreams Analyzed</div></div>
@@ -356,14 +360,11 @@ function HowItWorks() {
 function Features() {
   return (
     <section>
-      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">More Than Just Interpretation</h2><p className="section-desc mx-auto">NightMind combines AI with deep psychological frameworks.</p></div>
+      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">Everything You Need to Understand Your Dreams</h2><p className="section-desc mx-auto">NightMind combines AI with deep psychological frameworks.</p></div>
       <div className="features-grid">
-        <div className="feature-card"><div className="feature-icon">🧠</div><h3>Deep Psychology</h3><p>Jungian archetypes, Freudian theory, and modern dream science.</p></div>
-        <div className="feature-card"><div className="feature-icon">🎨</div><h3>Dream Art</h3><p>AI-generated artwork that visualizes your dream.</p></div>
-        <div className="feature-card"><div className="feature-icon">📊</div><h3>Pattern Tracking</h3><p>Calendar journal with recurring symbol and emotional pattern detection.</p></div>
-        <div className="feature-card"><div className="feature-icon">📱</div><h3>Shareable Cards</h3><p>Beautiful cards designed for TikTok, Instagram, and Twitter.</p></div>
-        <div className="feature-card"><div className="feature-icon">🔮</div><h3>500+ Symbols</h3><p>Dream symbols with psychological meanings from multiple traditions.</p></div>
-        <div className="feature-card"><div className="feature-icon">🔥</div><h3>Dream Streaks</h3><p>Build a daily logging habit with streaks and achievements.</p></div>
+        <div className="feature-card"><div className="feature-icon">🧠</div><h3>Deep Psychology</h3><p>Jungian archetypes, Freudian theory, and modern dream science — applied to your specific dream.</p></div>
+        <div className="feature-card"><div className="feature-icon">📓</div><h3>Dream Journal</h3><p>Save every interpretation to your personal calendar. Track patterns, symbols, and emotions over time.</p></div>
+        <div className="feature-card"><div className="feature-icon">🔓</div><h3>Go Deeper with Pro</h3><p>Unlock unlimited interpretations, deep psychological analysis, pattern recognition, and unlimited follow-up questions.</p></div>
       </div>
     </section>
   )
@@ -628,9 +629,18 @@ function DreamInterpreter({ user, onResult, onAuthClick, onEmailGateAuth }) {
             )}
 
             {error && (
-              <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '12px' }}>
-                <p style={{ color: '#f87171', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{error}</p>
-                <button className="btn btn-primary" style={{ fontSize: '0.85rem' }} onClick={onAuthClick}>Upgrade to Pro — $8.99/mo →</button>
+              <div className="upgrade-overlay">
+                <div className="lock-icon">🔒</div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", marginBottom: '0.5rem' }}>You've Used All 3 Free Interpretations</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>Upgrade to Pro to keep interpreting:</p>
+                <ul style={{ textAlign: 'left', maxWidth: '300px', margin: '0 auto 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <li style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}><span style={{ color: '#fbbf24' }}>✦</span> Unlimited dream interpretations</li>
+                  <li style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}><span style={{ color: '#fbbf24' }}>✦</span> Deep psychological analysis</li>
+                  <li style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}><span style={{ color: '#fbbf24' }}>✦</span> Pattern recognition across dreams</li>
+                  <li style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}><span style={{ color: '#fbbf24' }}>✦</span> Unlimited follow-up questions</li>
+                </ul>
+                <button className="btn btn-primary btn-large" onClick={onAuthClick}>Start 7-Day Free Trial →</button>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>$8.99/month after trial. Cancel anytime.</p>
               </div>
             )}
           </>
@@ -1128,9 +1138,11 @@ function DreamChat({ dreamId, dreamText, user, profile, onUpgrade }) {
       </div>
 
       {!isPro && freeQuestionsLeft <= 0 ? (
-        <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(139,92,246,0.08)', borderRadius: '12px', marginTop: '0.75rem' }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--accent-light)', marginBottom: '0.5rem' }}>Upgrade to Pro for unlimited dream conversations</p>
-          <button className="btn btn-primary" style={{ fontSize: '0.8rem' }} onClick={onUpgrade}>Unlock Pro →</button>
+        <div className="upgrade-overlay" style={{ marginTop: '0.75rem', padding: '1.5rem' }}>
+          <div className="lock-icon">🔒</div>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1rem', marginBottom: '0.5rem' }}>Want to dig deeper?</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Pro members get unlimited follow-up questions, deeper analysis, and pattern recognition.</p>
+          <button className="btn btn-primary" onClick={onUpgrade}>Start 7-Day Free Trial →</button>
         </div>
       ) : (
         <div className="chat-input-row">
@@ -1149,84 +1161,6 @@ function DreamChat({ dreamId, dreamText, user, profile, onUpgrade }) {
   )
 }
 
-// ---- COMMUNITY DREAM FEED ----
-function CommunityFeed({ user, onAuthClick }) {
-  const [dreams, setDreams] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => { loadFeed() }, [])
-
-  const loadFeed = async () => {
-    try { const data = await getSharedDreams(); setDreams(data || []) }
-    catch (err) { console.error(err) }
-    setLoading(false)
-  }
-
-  const handleLike = async (id) => {
-    if (!user) { onAuthClick(); return }
-    try {
-      await likeDream(id)
-      setDreams(prev => prev.map(d => d.id === id ? { ...d, likes_count: (d.likes_count || 0) + 1 } : d))
-    } catch (err) { console.error(err) }
-  }
-
-  // Sample dreams for when feed is empty
-  const sampleDreams = [
-    { id: 'sample1', display_name: 'Luna M.', dream_excerpt: 'I was swimming in an ocean made of stars. Each star I touched turned into a memory from my childhood...', interpretation_excerpt: 'Themes of nostalgia and emotional vastness. Your subconscious is processing foundational memories.', symbols: ['🌊 Ocean', '⭐ Stars', '👶 Childhood'], emotions: ['Wonder', 'Peace'], likes_count: 42, created_at: new Date().toISOString() },
-    { id: 'sample2', display_name: 'Anonymous Dreamer', dream_excerpt: 'A giant clock was melting in my living room while my cat tried to catch the dripping numbers...', interpretation_excerpt: 'A surreal exploration of time anxiety. The familiar setting grounds an abstract fear.', symbols: ['⏰ Clock', '🐈 Cat', '🏠 Home'], emotions: ['Confusion', 'Curiosity'], likes_count: 28, created_at: new Date().toISOString() },
-    { id: 'sample3', display_name: 'DreamWalker', dream_excerpt: 'I could fly but only as high as the treetops. Every time I went higher, gravity pulled me back gently...', interpretation_excerpt: 'A nuanced take on ambition vs. grounding. You seek transcendence but value stability.', symbols: ['🕊️ Flying', '🌳 Trees', '⬇️ Gravity'], emotions: ['Freedom', 'Acceptance'], likes_count: 67, created_at: new Date().toISOString() },
-  ]
-
-  const displayDreams = dreams.length > 0 ? dreams : sampleDreams
-
-  return (
-    <div className="journal-container" style={{ maxWidth: '700px' }}>
-      <div className="text-center">
-        <div className="section-label">Community</div>
-        <h2 className="section-title">Dream Feed</h2>
-        <p className="section-desc mx-auto">Explore dreams from the community. What are people dreaming about?</p>
-      </div>
-
-      <div style={{ marginTop: '1rem', textAlign: 'center', padding: '0.75rem', background: 'rgba(139,92,246,0.05)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>🔒 All dreams are shared anonymously. Your privacy is always protected.</p>
-      </div>
-
-      {loading ? (
-        <div className="loading-container" style={{ marginTop: '2rem' }}><div className="loading-orbs"><div className="loading-orb" /><div className="loading-orb" /><div className="loading-orb" /></div></div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
-          {displayDreams.map(d => (
-            <div key={d.id} className="feature-card" style={{ cursor: 'default' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--accent-light)', fontWeight: 600 }}>{d.display_name}</span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic', lineHeight: 1.6, marginBottom: '0.75rem' }}>
-                "{d.dream_excerpt}"
-              </p>
-              {d.interpretation_excerpt && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: '0.75rem' }}>
-                  ✦ {d.interpretation_excerpt}
-                </p>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div className="symbols-grid">
-                  {(d.emotions || []).slice(0, 2).map((e, i) => <span key={i} className="symbol-tag">{e}</span>)}
-                </div>
-                <button onClick={() => handleLike(d.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  💜 {d.likes_count || 0}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ---- DREAM TRAINING ----
 function LucidTraining({ user, onAuthClick }) {
@@ -1357,33 +1291,130 @@ function LucidTraining({ user, onAuthClick }) {
   )
 }
 
-// ---- PRIVACY SECTION (for landing page) ----
-function PrivacySection() {
+
+// ---- EXAMPLE INTERPRETATION (homepage trust builder) ----
+function ExampleInterpretation({ onNavigate }) {
   return (
-    <section>
+    <section className="example-section">
       <div className="text-center">
-        <div className="section-label">Your Privacy</div>
-        <h2 className="section-title">Your Dreams Are Sacred</h2>
-        <p className="section-desc mx-auto">We take dream privacy seriously. Your most intimate thoughts deserve protection.</p>
+        <div className="section-label">See It In Action</div>
+        <h2 className="section-title">Example Interpretation</h2>
+        <p className="section-desc mx-auto">Here's what a real NightMind analysis looks like.</p>
       </div>
-      <div className="features-grid" style={{ marginTop: '2rem' }}>
-        <div className="feature-card">
-          <div className="feature-icon">🔒</div>
-          <h3>End-to-End Private</h3>
-          <p>Your dreams are encrypted and only visible to you. We never sell, share, or use your dream data for training.</p>
+      <div className="example-wrapper">
+        <div className="example-dream">
+          <div className="interpretation-label">The Dream</div>
+          <p className="example-dream-text">"I was walking through a forest at night when I noticed the trees were made of glass. A wolf appeared on the path ahead, but instead of being afraid, I felt calm. It looked at me and then walked into the darkness."</p>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">🫥</div>
-          <h3>Anonymous Sharing</h3>
-          <p>When you share dreams to the community feed, your identity is always hidden. Share only what you're comfortable with.</p>
+        <div className="example-elements">
+          <div className="interpretation-label">Extracted Elements</div>
+          <div className="element-breakdown">
+            <div className="element-card">
+              <div className="element-name">Glass Trees</div>
+              <div className="element-role">Setting detail</div>
+              <div className="element-interp">Fragility and transparency in your environment — things you can see through but that could shatter.</div>
+            </div>
+            <div className="element-card">
+              <div className="element-name">Wolf</div>
+              <div className="element-role">Guide figure</div>
+              <div className="element-interp">Your instinctual self. The calm you felt suggests you're ready to trust your gut rather than fear it.</div>
+            </div>
+            <div className="element-card">
+              <div className="element-name">Darkness</div>
+              <div className="element-role">Destination</div>
+              <div className="element-interp">The unknown ahead. The wolf walking into it first means part of you is already moving toward what you can't yet see.</div>
+            </div>
+          </div>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">🗑️</div>
-          <h3>Delete Anytime</h3>
-          <p>Your data, your rules. Delete any dream or your entire account at any time. We wipe everything permanently.</p>
+        <div className="example-interpretation">
+          <div className="interpretation-label">Core Theme</div>
+          <p className="interpretation-text" style={{ color: 'var(--accent-light)', fontWeight: 600, fontSize: '1.05rem' }}>Trusting instinct through uncertain transitions</p>
+        </div>
+        <div className="example-followup">
+          <div className="interpretation-label">Follow-Up Question</div>
+          <div className="followup-q"><span className="followup-icon">?</span><span>What situation in your life right now feels fragile but transparent — where you can see the truth but worry it might break?</span></div>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Try It With Your Dream →</button>
         </div>
       </div>
     </section>
+  )
+}
+
+// ---- SETTINGS ----
+function Settings({ user, profile, onUpgrade, onSignOut }) {
+  const isPro = profile?.subscription_tier === 'pro'
+  return (
+    <div className="journal-container" style={{ maxWidth: '600px' }}>
+      <div className="text-center">
+        <div className="section-label">Settings</div>
+        <h2 className="section-title">Your Account</h2>
+      </div>
+      <div className="feature-card" style={{ marginTop: '1.5rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <div className="interpretation-label">Email</div>
+          <p style={{ color: 'var(--text-secondary)' }}>{user?.email || 'No email set'}</p>
+        </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="interpretation-label">Current Plan</div>
+          <p style={{ color: isPro ? '#fbbf24' : 'var(--text-secondary)', fontWeight: 600, fontSize: '1.1rem' }}>
+            {isPro ? '✦ Pro' : 'Free'}
+          </p>
+          {isPro ? (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Unlimited interpretations, deep analysis, unlimited chat</p>
+          ) : (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>3 interpretations/month, 2 follow-ups per dream</p>
+          )}
+        </div>
+        {!isPro && (
+          <button className="btn btn-primary" onClick={onUpgrade} style={{ width: '100%', justifyContent: 'center', marginBottom: '1rem' }}>
+            Upgrade to Pro — Start 7-Day Free Trial
+          </button>
+        )}
+        <button className="btn btn-secondary" onClick={onSignOut} style={{ width: '100%', justifyContent: 'center' }}>
+          Sign Out
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ---- LOGGED-IN DASHBOARD ----
+function Dashboard({ onNavigate, profile, streak }) {
+  const isPro = profile?.subscription_tier === 'pro'
+  return (
+    <div className="journal-container" style={{ maxWidth: '700px' }}>
+      <div className="text-center" style={{ marginBottom: '2rem' }}>
+        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Welcome Back</h2>
+        <p className="section-desc">What did you dream last night?</p>
+      </div>
+      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+        <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')} style={{ fontSize: '1.1rem' }}>
+          + Interpret a Dream
+        </button>
+      </div>
+      {streak >= 2 && <StreakBanner streak={streak} />}
+      <div className="features-grid" style={{ marginTop: '1.5rem' }}>
+        <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => onNavigate('journal')}>
+          <div className="feature-icon">📓</div>
+          <h3>Dream Journal</h3>
+          <p>View your dream calendar and past interpretations</p>
+        </div>
+        <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => onNavigate('lucid')}>
+          <div className="feature-icon">🌙</div>
+          <h3>Dream Training</h3>
+          <p>Learn lucid dreaming techniques</p>
+        </div>
+        {!isPro && (
+          <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center', borderColor: 'rgba(251,191,36,0.2)' }} onClick={() => onNavigate('settings')}>
+            <div className="feature-icon">🔓</div>
+            <h3>Upgrade to Pro</h3>
+            <p>Unlimited interpretations, deep analysis, and more</p>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -1446,7 +1477,13 @@ function App() {
       <div className="app-container">
         <Nav onNavigate={navigate} user={user} onAuthClick={() => setShowAuth(true)} onSignOut={handleSignOut} />
 
-        {view === 'home' && (<><Hero onNavigate={navigate} /><HowItWorks /><Features /><Testimonials /><PrivacySection /><Pricing onNavigate={navigate} user={user} profile={profile} onAuthClick={() => setShowAuth(true)} /><CTASection onNavigate={navigate} /></>)}
+        {view === 'home' && (user ? (
+          <div style={{ paddingTop: '5rem' }}>
+            <Dashboard onNavigate={navigate} profile={profile} streak={0} />
+          </div>
+        ) : (
+          <><Hero onNavigate={navigate} /><HowItWorks /><ExampleInterpretation onNavigate={navigate} /><Features /><Testimonials /><Pricing onNavigate={navigate} user={user} profile={profile} onAuthClick={() => setShowAuth(true)} /><CTASection onNavigate={navigate} /></>
+        ))}
 
         {view === 'interpret' && (
           <div style={{ paddingTop: '5rem' }}>
@@ -1471,12 +1508,6 @@ function App() {
           </div>
         )}
 
-        {view === 'community' && (
-          <div style={{ paddingTop: '5rem' }}>
-            <CommunityFeed user={user} onAuthClick={() => setShowAuth(true)} />
-          </div>
-        )}
-
         {view === 'lucid' && (
           <div style={{ paddingTop: '5rem' }}>
             <LucidTraining user={user} onAuthClick={() => setShowAuth(true)} />
@@ -1486,6 +1517,12 @@ function App() {
         {view === 'pricing' && (
           <div style={{ paddingTop: '5rem' }}>
             <Pricing onNavigate={navigate} user={user} profile={profile} onAuthClick={() => setShowAuth(true)} />
+          </div>
+        )}
+
+        {view === 'settings' && (
+          <div style={{ paddingTop: '5rem' }}>
+            <Settings user={user} profile={profile} onUpgrade={handleUpgrade} onSignOut={handleSignOut} />
           </div>
         )}
 
