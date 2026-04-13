@@ -329,11 +329,11 @@ function Hero({ onNavigate }) {
   return (
     <section className="hero">
       <div className="hero-orb" />
-      <div className="hero-badge">✦ AI-Powered Dream Analysis</div>
-      <h1>Decode Your<br /><span className="gradient-text">Dreams</span></h1>
-      <p className="hero-sub">Uncover the hidden messages in your dreams with deep psychological analysis powered by AI. Jungian. Freudian. Personal.</p>
+      <div className="hero-badge">✦ AI Dream Interpretation</div>
+      <h1>Understand What Your<br /><span className="gradient-text">Dreams Mean</span></h1>
+      <p className="hero-sub">Get a real psychological interpretation of your dream in 30 seconds. Not a generic horoscope. Specific to you.</p>
       <div className="hero-cta">
-        <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Start Your Interpretation →</button>
+        <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Interpret Your Dream Free →</button>
       </div>
       <div className="hero-stats">
         <div className="hero-stat"><div className="hero-stat-num">50K+</div><div className="hero-stat-label">Dreams Analyzed</div></div>
@@ -349,9 +349,9 @@ function HowItWorks() {
     <section>
       <div className="text-center"><div className="section-label">How It Works</div><h2 className="section-title">Three Steps to Understanding</h2></div>
       <div className="steps-grid">
-        <div className="step-card"><div className="step-number">1</div><h3>Describe Your Dream</h3><p>Write down everything you remember — people, places, feelings, events.</p></div>
-        <div className="step-card"><div className="step-number">2</div><h3>AI Analyzes Deeply</h3><p>Our AI draws from Jungian, Freudian, and modern dream psychology.</p></div>
-        <div className="step-card"><div className="step-number">3</div><h3>Get Your Insights</h3><p>Receive a beautiful, shareable card with symbols, emotions, and guidance.</p></div>
+        <div className="step-card"><div className="step-number">1</div><h3>Describe Your Dream</h3><p>Type or speak your dream. Every detail matters.</p></div>
+        <div className="step-card"><div className="step-number">2</div><h3>AI Analyzes Deeply</h3><p>AI extracts symbols, themes, and emotions using real psychology.</p></div>
+        <div className="step-card"><div className="step-number">3</div><h3>Get Your Insights</h3><p>Read a personalized interpretation. Ask follow-up questions.</p></div>
       </div>
     </section>
   )
@@ -360,7 +360,7 @@ function HowItWorks() {
 function Features() {
   return (
     <section>
-      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">Everything You Need to Understand Your Dreams</h2><p className="section-desc mx-auto">NightMind combines AI with deep psychological frameworks.</p></div>
+      <div className="text-center"><div className="section-label">Features</div><h2 className="section-title">Built for Serious Dreamers</h2></div>
       <div className="features-grid">
         <div className="feature-card"><div className="feature-icon">🧠</div><h3>Deep Psychology</h3><p>Jungian archetypes, Freudian theory, and modern dream science — applied to your specific dream.</p></div>
         <div className="feature-card"><div className="feature-icon">📓</div><h3>Dream Journal</h3><p>Save every interpretation to your personal calendar. Track patterns, symbols, and emotions over time.</p></div>
@@ -373,7 +373,7 @@ function Features() {
 function Testimonials() {
   const reviews = [
     { text: "NightMind showed me connections I never noticed. The Jungian analysis is genuinely insightful.", name: "Maya K.", handle: "@mayakreates", initials: "MK" },
-    { text: "Made a TikTok about my dream interpretation and it got 200K views. The share cards are beautiful.", name: "Jordan T.", handle: "@jordtee", initials: "JT" },
+    { text: "I've tried other dream apps. This is the first one that felt like it actually understood MY dream, not just gave me a dictionary definition.", name: "Jordan T.", handle: "@jordtee", initials: "JT" },
     { text: "The calendar journal is addicting. Seeing a whole month of dream patterns is mind-blowing.", name: "Alex R.", handle: "@alexrdreams", initials: "AR" },
   ]
   return (
@@ -1041,10 +1041,9 @@ function Pricing({ onNavigate, user, profile, onAuthClick }) {
 function CTASection({ onNavigate }) {
   return (
     <div className="cta-section">
-      <div className="section-label">Ready?</div>
       <h2 className="section-title">What Did You Dream Last Night?</h2>
-      <p className="section-desc mx-auto" style={{ marginBottom: '2rem' }}>Your subconscious is trying to tell you something.</p>
-      <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Interpret My Dream Free →</button>
+      <p className="section-desc mx-auto" style={{ marginBottom: '2rem' }}>One dream. Real insight. Free.</p>
+      <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')}>Interpret Your Dream Free →</button>
     </div>
   )
 }
@@ -1297,9 +1296,8 @@ function ExampleInterpretation({ onNavigate }) {
   return (
     <section className="example-section">
       <div className="text-center">
-        <div className="section-label">See It In Action</div>
-        <h2 className="section-title">Example Interpretation</h2>
-        <p className="section-desc mx-auto">Here's what a real NightMind analysis looks like.</p>
+        <div className="section-label">Real Output</div>
+        <h2 className="section-title">What You'll Actually Get</h2>
       </div>
       <div className="example-wrapper">
         <div className="example-dream">
@@ -1386,12 +1384,12 @@ function Dashboard({ onNavigate, profile, streak }) {
   return (
     <div className="journal-container" style={{ maxWidth: '700px' }}>
       <div className="text-center" style={{ marginBottom: '2rem' }}>
-        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Welcome Back</h2>
-        <p className="section-desc">What did you dream last night?</p>
+        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Your Dream Space</h2>
+        <p className="section-desc">Ready to decode tonight's dream?</p>
       </div>
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
         <button className="btn btn-primary btn-large" onClick={() => onNavigate('interpret')} style={{ fontSize: '1.1rem' }}>
-          + Interpret a Dream
+          Interpret a New Dream →
         </button>
       </div>
       {streak >= 2 && <StreakBanner streak={streak} />}
@@ -1399,18 +1397,16 @@ function Dashboard({ onNavigate, profile, streak }) {
         <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => onNavigate('journal')}>
           <div className="feature-icon">📓</div>
           <h3>Dream Journal</h3>
-          <p>View your dream calendar and past interpretations</p>
         </div>
         <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => onNavigate('lucid')}>
           <div className="feature-icon">🌙</div>
           <h3>Dream Training</h3>
-          <p>Learn lucid dreaming techniques</p>
         </div>
         {!isPro && (
           <div className="feature-card" style={{ cursor: 'pointer', textAlign: 'center', borderColor: 'rgba(251,191,36,0.2)' }} onClick={() => onNavigate('settings')}>
             <div className="feature-icon">🔓</div>
             <h3>Upgrade to Pro</h3>
-            <p>Unlimited interpretations, deep analysis, and more</p>
+            <p>Unlimited depth</p>
           </div>
         )}
       </div>
